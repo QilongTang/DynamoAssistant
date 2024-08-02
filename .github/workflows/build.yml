@@ -1,0 +1,46 @@
+# Build SampleIntegration.sln and DynamoAssistant.sln with .NET 8.0
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout DynamoAssistant Repo
+        uses: actions/checkout@v4
+        with:
+          path: DynamoAssistant
+          repository: QilongTang/DynamoAssistant
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Disable problem matcher
+        run: echo "::remove-matcher owner=csc::"
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.3
+
+      - name: Install dependencies for DynamoAssistant
+        run: |
+          dotnet restore ${{ github.workspace }}\DynamoAssistant\src\DynamoAssistant.sln /p:Configuration=Release --runtime=win-x64
+      - name: Build DynamoAssistant
+        run: |
+          msbuild ${{ github.workspace }}\DynamoAssistant\src\DynamoAssistant.sln /p:Configuration=Release
+      - name: Look for Sample Packages
+        run: |
+          $paths = @(
+            "${{ github.workspace }}\DynamoAssistant\dynamo_viewExtension\Dynamo Gen AI assistant\bin\DynamoAssistantViewExtension.dll"
+          )
+
+          foreach ($path in $paths) {
+            if (Test-Path -Path $path) {
+              Write-Output "$path exists!"
+            } else {
+              Write-Error "$path was not found!"
+            }
+          }
