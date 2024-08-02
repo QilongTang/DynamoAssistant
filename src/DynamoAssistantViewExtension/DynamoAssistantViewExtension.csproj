@@ -18,15 +18,29 @@
   </ItemGroup>
   <ItemGroup>
     <None Update="DynamoAssistantViewExtension_ViewExtensionDefinition.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestDyn\TestGraph.dyn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestDyn\TestGraph2.dyn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestDyn\TestGraph3.dyn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="TestDyn\" />
   </ItemGroup>
   <Target Name="AfterBuildOps" AfterTargets="Build">
     <ItemGroup>
       <PackageDll Include="$(ProjectDir)bin\$(ConfigurationName)\DynamoAssistantViewExtension.dll" />
       <PackageXml Include="$(ProjectDir)bin\$(ConfigurationName)\DynamoAssistantViewExtension_ViewExtensionDefinition.xml" />
+      <PackageDyn Include="$(ProjectDir)bin\$(ConfigurationName)\**\*.dyn" />
     </ItemGroup>
     <Copy SourceFiles="@(PackageDll)" DestinationFolder="$(ProjectDir)..\..\dynamo_viewExtension\Dynamo Gen AI assistant\bin" />
     <Copy SourceFiles="@(PackageXml)" DestinationFolder="$(ProjectDir)..\..\dynamo_viewExtension\Dynamo Gen AI assistant\extra" />
+    <Copy SourceFiles="@(PackageDyn)" DestinationFolder="$(ProjectDir)..\..\dynamo_viewExtension\Dynamo Gen AI assistant\dyn" />
   </Target>
 </Project>
