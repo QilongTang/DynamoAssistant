@@ -15,6 +15,7 @@ local.properties
 .classpath
 .settings/
 .loadpath
+dynamo_viewExtension/Dynamo Gen AI assistant/
 
 # External tool builders
 .externalToolBuilders/
