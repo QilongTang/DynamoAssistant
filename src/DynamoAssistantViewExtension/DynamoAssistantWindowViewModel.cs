@@ -20,7 +20,7 @@ namespace DynamoAssistant
         // Chat GPT related fields
         private readonly ChatClient chatGPTClient;
         //private readonly Conversation conversation;
-        private static readonly string apikey = "Your Open AI project API Key";
+        private static readonly string apikey = APIKeyStorage.APIKey;
 
         // Chat GPT pre instruction fields
         // A set of instructions to prepare GPT to describe Dynamo graph better
