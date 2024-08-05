@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading;
 using System.Windows.Input;
 using Dynamo.Core;
 using Dynamo.Extensions;
 using Dynamo.Models;
 using Dynamo.UI.Commands;
 using Dynamo.ViewModels;
+using NAudio.Wave;
+using OpenAI.Audio;
 using OpenAI.Chat;
 
 namespace DynamoAssistant
@@ -92,6 +95,7 @@ namespace DynamoAssistant
 
             // Display the chatbot's response   
             Messages.Add("Gen-AI assistant:\n" + response + "\n");
+            OpenAITextToVoice(response);
 
             // TODO: Add more logic to handle different responses which would include Python node creation
             var responseToLower = response.ToLower();
@@ -100,6 +104,31 @@ namespace DynamoAssistant
                 CreatePythonNode(response);
             }
             IsWaitingForInput = true;
+        }
+
+        /// <summary>
+        /// Function to convert input text to speech using OpenAI API
+        /// </summary>
+        /// <param name="input"></param>
+        internal static void OpenAITextToVoice(string input)
+        {
+            AudioClient client = new(model: "tts-1", apikey);
+            BinaryData speech = client.GenerateSpeechFromText(input, GeneratedSpeechVoice.Alloy);
+            var fileName = $"{Guid.NewGuid()}.mp3";
+            using FileStream stream = File.OpenWrite(fileName);
+            speech.ToStream().CopyTo(stream);
+            stream.Close();
+
+            using (var audioFile = new AudioFileReader(fileName))
+            using (var outputDevice = new WaveOutEvent())
+            {
+                outputDevice.Init(audioFile);
+                outputDevice.Play();
+                while (outputDevice.PlaybackState == PlaybackState.Playing)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
         }
 
         internal async void DescribeGraph()

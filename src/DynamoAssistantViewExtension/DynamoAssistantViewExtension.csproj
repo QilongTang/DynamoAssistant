@@ -13,6 +13,7 @@
     <PackageReference Include="DynamoVisualProgramming.DynamoServices" Version="3.1.0-beta4307" ExcludeAssets="runtime" />
     <PackageReference Include="DynamoVisualProgramming.WpfUILibrary" Version="3.1.0-beta4307" ExcludeAssets="runtime" />
     <PackageReference Include="DynamoVisualProgramming.ZeroTouchLibrary" Version="3.1.0-beta4307" ExcludeAssets="runtime" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="OpenAI" Version="2.0.0-beta.8" />
     <PackageReference Include="RestSharp" Version="108.0.1" ExcludeAssets="runtime" />
   </ItemGroup>

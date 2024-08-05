@@ -4,6 +4,7 @@
 
 # Dynamo Assistant
 Gen-AI based Dynamo Assistant
+![Image](https://global.discourse-cdn.com/business6/uploads/dynamobim/original/3X/3/2/328a54785c48ce28bb56999e894cea192b27f7de.jpeg)
 
 This Dynamo view extension make use of the [OpenAI .NET SDK](https://www.nuget.org/packages/OpenAI/2.0.0-beta.8) and [Dynamo NuGet packages](https://www.nuget.org/packages?q=DynamoVisualProgramming). NuGet should take care of restoring these packages if they are not available on your system at build time.
 
