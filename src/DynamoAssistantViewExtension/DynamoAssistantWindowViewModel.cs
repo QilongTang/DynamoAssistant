@@ -16,21 +16,15 @@ namespace DynamoAssistant
 {
     public class DynamoAssistantWindowViewModel : NotificationObject, IDisposable
     {
+        #region private fields
         private readonly ReadyParams readyParams;
-        internal DynamoViewModel dynamoViewModel;
-
-        /// <summary>
-        /// User input to the Gen-AI assistant
-        /// </summary>
-        private string userInput;
-
-        /// <summary>
-        /// If user prefers voice response over text
-        /// </summary>
-        internal bool IsVoicePreferred = false;
 
         // Chat GPT related fields
         private readonly ChatClient chatGPTClient;
+
+        // The name of the assistant
+        private readonly string AssistantName = "Gen-AI assistant:\n";
+
         //private readonly Conversation conversation;
         private static readonly string apikey = APIKeyStorage.APIKey;
 
@@ -40,7 +34,13 @@ namespace DynamoAssistant
 
         // A set of instructions to prepare GPT to optimize Dynamo graph better
         private const string OptimizePreInstruction = "Given a JSON file representing a Dynamo for Revit project, perform a comprehensive analysis focusing on the graph's node structure. Your tasks include:\r\n\r\nIdentify Unnecessary Nodes: Detect nodes that do not contribute to the final output or create redundant processes within the graph. This includes nodes with default values that never change or intermediary nodes that could be bypassed without altering the graph's outcome.\r\n\r\nOptimization Recommendations: Based on your analysis, recommend specific changes to the node structure. This might involve reordering nodes for logical flow, changing node types for efficiency, or altering connections to ensure data type compatibility.\r\n\r\nUpdate JSON Structure: Apply the optimization recommendations to the JSON file. Directly modify the \"Nodes\" and \"Connectors\" sections to reflect the optimized graph layout. Ensure that all other elements of the JSON file, such as \"Uuid\", \"Description\", \"ElementResolver\", and metadata, remain unchanged to preserve the file's integrity and additional context.\r\n\r\nOutput an Optimized JSON: Provide a revised JSON file, focusing exclusively on an updated node structure that reflects your analysis and optimizations. This file should retain all original details except for the modifications to nodes and their connections to address identified issues and enhance efficiency.";
-        
+
+        /// <summary>
+        /// User input to the Gen-AI assistant
+        /// </summary>
+        private string userInput;
+        #endregion
+
         /// <summary>
         /// User input to the Gen-AI assistant
         /// </summary>
@@ -59,6 +59,13 @@ namespace DynamoAssistant
             }
         }
 
+        internal DynamoViewModel dynamoViewModel;
+
+        /// <summary>
+        /// If user prefers voice response over text
+        /// </summary>
+        internal bool IsVoicePreferred = false;
+
         /// <summary>
         /// Dynamo Model getter
         /// </summary>
@@ -71,6 +78,10 @@ namespace DynamoAssistant
 
         public ObservableCollection<string> Messages{ get; set; } = new ObservableCollection<string>();
 
+        /// <summary>
+        /// Constructor for the DynamoAssistantWindowViewModel
+        /// </summary>
+        /// <param name="p"></param>
         public DynamoAssistantWindowViewModel(ReadyParams p)
         {
             readyParams = p;
@@ -82,7 +93,7 @@ namespace DynamoAssistant
             // conversation.RequestParameters.Temperature = 0.1;
 
             // Display a welcome message
-            Messages.Add("Gen-AI assistant:\nWelcome to Dynamo world and ask me anything to get started!\n");
+            Messages.Add(AssistantName + "Welcome to Dynamo world and ask me anything to get started!\n");
         }
 
         /// <summary>
@@ -103,7 +114,7 @@ namespace DynamoAssistant
             var response = completion.ToString();
 
             // Display the chatbot's response   
-            Messages.Add("Gen-AI assistant:\n" + response + "\n");
+            Messages.Add(AssistantName + response + "\n");
 
             // If user prefers voice response, convert the response to speech
             if (IsVoicePreferred)
@@ -127,7 +138,7 @@ namespace DynamoAssistant
         internal static void OpenAITextToVoice(string input)
         {
             AudioClient client = new(model: "tts-1", apikey);
-            BinaryData speech = client.GenerateSpeechFromText(input, GeneratedSpeechVoice.Alloy);
+            BinaryData speech = client.GenerateSpeechFromText(input, GeneratedSpeechVoice.Echo);
             var fileName = $"{Guid.NewGuid()}.mp3";
             using FileStream stream = File.OpenWrite(fileName);
             speech.ToStream().CopyTo(stream);
@@ -152,11 +163,12 @@ namespace DynamoAssistant
             if (string.IsNullOrEmpty(filePath))
             {
                 // Alternatively, export Json from current workspace model to continue
-                Messages.Add("Gen-AI assistant:\nPlease save the workspace first.\n");
+                Messages.Add(AssistantName + "Please save the workspace first.\n");
                 return;
             }
 
-            //Read the file 
+            // Read the file
+            // TODO: Add more logic to remove the graph thumbnail from the JSON file
             string jsonData = File.ReadAllText(filePath);
 
             var msg = "This is my Dynamo project JSON structure.\n" + jsonData;
@@ -166,7 +178,7 @@ namespace DynamoAssistant
             var response = completion.ToString();
 
             // Display the chatbot's graph description
-            Messages.Add("Gen-AI assistant:\n" + response + "\n");
+            Messages.Add(AssistantName + response + "\n");
         }
 
         internal async void OptimizeGraph()
@@ -176,7 +188,7 @@ namespace DynamoAssistant
             if (string.IsNullOrEmpty(filePath))
             {
                 // Alternatively, export Json from current workspace model to continue
-                Messages.Add("Gen-AI assistant:\nPlease save the workspace first.\n");
+                Messages.Add(AssistantName + "Please save the workspace first.\n");
                 return;
             }
 
@@ -192,7 +204,7 @@ namespace DynamoAssistant
             // This file overwrite the original file, please be careful
             // File.WriteAllText(filePath, response);
             // Display the chatbot's response
-            Messages.Add("Gen-AI assistant:\n" + response + "\n");
+            Messages.Add(AssistantName + response + "\n");
         }
 
         internal async void WhatsNew()
@@ -201,7 +213,7 @@ namespace DynamoAssistant
             ChatCompletion completion = await chatGPTClient.CompleteChatAsync("What's new in Dynamo 3.0?");
             var response = completion.ToString();
             // Display the chatbot's response
-            Messages.Add("Gen-AI assistant:\n" + response + "\n");
+            Messages.Add(AssistantName + response + "\n");
         }
 
         internal void MakeNote()
@@ -238,13 +250,13 @@ namespace DynamoAssistant
                 Script = pythonScript
             };
             DynamoModel.ExecuteCommand(new DynamoModel.CreateNodeCommand(pythonNode, 0, 0, true, false));
-            Messages.Add("Gen-AI assistant:\nThe Python node including the code above has been created for you!\n");
+            Messages.Add(AssistantName + "The Python node including the code above has been created for you!\n");
         }
 
         internal void CreateNote(string nodeId, string noteText, double x, double y, bool defaultPosition)
         {
             DynamoModel.ExecuteCommand(new DynamoModel.CreateNoteCommand(nodeId, noteText, x, y, defaultPosition));
-            Messages.Add("Gen-AI assistant:\nYour note has been created!\n");
+            Messages.Add(AssistantName + "Your note has been created!\n");
         }
 
         private DelegateCommand enterCommand;
@@ -259,6 +271,10 @@ namespace DynamoAssistant
             }
         }
 
+        /// <summary>
+        /// Enter/Send button handler
+        /// </summary>
+        /// <param name="commandParameter"></param>
         private void Enter(object commandParameter)
         {
             SendMessage(commandParameter as string);
