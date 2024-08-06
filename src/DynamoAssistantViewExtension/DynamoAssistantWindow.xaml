@@ -1,4 +1,4 @@
-﻿<Window x:Class="DynamoAssistant.DynamoAssistantWindow"
+﻿    <Window x:Class="DynamoAssistant.DynamoAssistantWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -15,7 +15,7 @@
           VerticalAlignment="Stretch">
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="6*"/>
+            <RowDefinition Height="7*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -63,15 +63,25 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Label 
-                    Content="Suggestions:"
-                    FontSize="15"
-                    FontWeight="Bold"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    Background="#2d2d2d"
-                    Foreground="White"/>
+                        Content="Suggestions:"
+                        FontSize="15"
+                        FontWeight="Bold"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Background="#2d2d2d"
+                        Foreground="White"/>
+                <CheckBox
+                        Name="VoiceResultsCheckBox"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        IsChecked="False"
+                        Checked="VoiceResultsCheckBox_Checked"
+                        MinWidth="200"
+                        Margin="10 0 0 0">
+                    Results in Voice
+                </CheckBox>
 
                 <Button
                     Content="Tell me what this graph does"
@@ -184,7 +194,5 @@
                 Foreground="White"
                 IsEnabled="{Binding IsWaitingForInput}"/>
         </Grid>
-
-
     </Grid>
 </Window>

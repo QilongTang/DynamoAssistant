@@ -16,9 +16,18 @@ namespace DynamoAssistant
 {
     public class DynamoAssistantWindowViewModel : NotificationObject, IDisposable
     {
-        private string userInput;
         private readonly ReadyParams readyParams;
         internal DynamoViewModel dynamoViewModel;
+
+        /// <summary>
+        /// User input to the Gen-AI assistant
+        /// </summary>
+        private string userInput;
+
+        /// <summary>
+        /// If user prefers voice response over text
+        /// </summary>
+        internal bool IsVoicePreferred = false;
 
         // Chat GPT related fields
         private readonly ChatClient chatGPTClient;
@@ -95,7 +104,12 @@ namespace DynamoAssistant
 
             // Display the chatbot's response   
             Messages.Add("Gen-AI assistant:\n" + response + "\n");
-            OpenAITextToVoice(response);
+
+            // If user prefers voice response, convert the response to speech
+            if (IsVoicePreferred)
+            {
+                OpenAITextToVoice(response);
+            }
 
             // TODO: Add more logic to handle different responses which would include Python node creation
             var responseToLower = response.ToLower();

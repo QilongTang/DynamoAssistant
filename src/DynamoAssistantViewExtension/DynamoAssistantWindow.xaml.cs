@@ -43,5 +43,10 @@ namespace DynamoAssistant
         {
             ViewModel.MakeGroup();
         }
+
+        private void VoiceResultsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            ViewModel.IsVoicePreferred = VoiceResultsCheckBox.IsChecked ?? false;
+        }
     }
 }
