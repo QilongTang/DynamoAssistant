@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Dynamo.Core;
 using Dynamo.Extensions;
@@ -99,7 +100,7 @@ namespace DynamoAssistant
         /// <summary>
         /// Send user message to ChatGPT and display the response
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">User input</param>
         internal async void SendMessage(string msg)
         {
             if (string.IsNullOrEmpty(msg)) return;
@@ -119,7 +120,7 @@ namespace DynamoAssistant
             // If user prefers voice response, convert the response to speech
             if (IsVoicePreferred)
             {
-                OpenAITextToVoice(response);
+                await Task.Run(() => OpenAITextToVoice(response));
             }
 
             // TODO: Add more logic to handle different responses which would include Python node creation
@@ -131,11 +132,13 @@ namespace DynamoAssistant
             IsWaitingForInput = true;
         }
 
+
+
         /// <summary>
         /// Function to convert input text to speech using OpenAI API
         /// </summary>
         /// <param name="input"></param>
-        internal static void OpenAITextToVoice(string input)
+        internal async Task OpenAITextToVoice(string input)
         {
             AudioClient client = new(model: "tts-1", apikey);
             BinaryData speech = client.GenerateSpeechFromText(input, GeneratedSpeechVoice.Echo);
@@ -207,6 +210,9 @@ namespace DynamoAssistant
             Messages.Add(AssistantName + response + "\n");
         }
 
+        /// <summary>
+        /// returns the user what's new in latest version of Dynamo
+        /// </summary>
         internal async void WhatsNew()
         {
             // Send the user's input to the ChatGPT API and receive a response
@@ -216,12 +222,18 @@ namespace DynamoAssistant
             Messages.Add(AssistantName + response + "\n");
         }
 
+        /// <summary>
+        /// Create a new annotation
+        /// </summary>
         internal void MakeNote()
         {
             // create a Dynamo note example
             CreateNote((new Guid()).ToString(), "This is a sample Note.", 0, 0, true);
         }
 
+        /// <summary>
+        /// Create a group for the selected node(s) with empty description
+        /// </summary>
         internal void MakeGroup()
         {
             // create a Dynamo group example
@@ -229,7 +241,7 @@ namespace DynamoAssistant
         }
 
         /// <summary>
-        /// Create a python node in Dynamo, use latest Nuget package for this
+        /// Create a python node in Dynamo, use a beta Nuget package for this
         /// </summary>
         /// <param name="response"></param>
         internal void CreatePythonNode(string response)
