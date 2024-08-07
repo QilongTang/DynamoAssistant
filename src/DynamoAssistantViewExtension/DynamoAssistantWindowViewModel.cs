@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ClientModel;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading;
@@ -10,8 +12,11 @@ using Dynamo.Models;
 using Dynamo.UI.Commands;
 using Dynamo.ViewModels;
 using NAudio.Wave;
+using OpenAI.Assistants;
+using OpenAI;
 using OpenAI.Audio;
 using OpenAI.Chat;
+using System.Text.RegularExpressions;
 
 namespace DynamoAssistant
 {
@@ -40,6 +45,11 @@ namespace DynamoAssistant
         /// User input to the Gen-AI assistant
         /// </summary>
         private string userInput;
+
+        /// <summary>
+        /// Response from backend service
+        /// </summary>
+        private string response;
         #endregion
 
         /// <summary>
@@ -108,11 +118,9 @@ namespace DynamoAssistant
 
             // Display user message first
             Messages.Add("You:\n" + msg + "\n");
-
-            // Send the user's input to the ChatGPT client and start to stream the response
-            // Single chat completion
-            ChatCompletion completion = await chatGPTClient.CompleteChatAsync(msg);
-            var response = completion.ToString();
+            // Developer can make the switch here below
+            // await SendMessageToGPT(msg);
+            await SendMessageToAssistant(msg);
 
             // Display the chatbot's response   
             Messages.Add(AssistantName + response + "\n");
@@ -132,7 +140,64 @@ namespace DynamoAssistant
             IsWaitingForInput = true;
         }
 
+        internal async Task SendMessageToGPT(string msg)
+        {
+            // Send the user's input to the ChatGPT client and start to stream the response
+            // Single chat completion
+            ChatCompletion completion = await chatGPTClient.CompleteChatAsync(msg);
+            response = completion.ToString();
+        }
 
+        internal async Task SendMessageToAssistant(string msg)
+        {
+            // Display the chatbot's response
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            AssistantClient client = new(apikey);
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+            var assistant = client.GetAssistant("asst_J8PSA1asQDqEGluCGMykzJhJ").Value;
+            //Console.WriteLine(assistant.Name + assistant.Description + assistant.Temperature);
+
+            // Create a thread with an initial user message and run it.
+            ThreadCreationOptions threadOptions = new()
+            {
+                InitialMessages = { msg }
+            };
+
+            ThreadRun run = client.CreateThreadAndRun(assistant.Id, threadOptions);
+
+            // Poll the run until it is no longer queued or in progress.
+            while (!run.Status.IsTerminal)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+                run = await client.GetRunAsync(run.ThreadId, run.Id);
+            }
+
+            // With the run complete, list the messages and display their content
+            if (run.Status == RunStatus.Completed)
+            {
+                PageCollection<ThreadMessage> messagePages
+                    = client.GetMessages(run.ThreadId, new MessageCollectionOptions() { Order = ListOrder.OldestFirst });
+                IEnumerable<ThreadMessage> messages = messagePages.GetAllValues();
+
+                foreach (ThreadMessage message in messages)
+                {
+                    if (!message.Role.ToString().ToUpper().Equals("User"))
+                    {
+                        foreach (MessageContent contentItem in message.Content)
+                        {
+                            // Set response and clean up resources references
+                            Regex regex = new Regex("【.*?†source】");
+                            response = regex.Replace(contentItem.Text, "");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw new NotImplementedException(run.Status.ToString());
+            }
+        }
 
         /// <summary>
         /// Function to convert input text to speech using OpenAI API
