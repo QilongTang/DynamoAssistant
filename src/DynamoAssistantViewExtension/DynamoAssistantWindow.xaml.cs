@@ -48,5 +48,10 @@ namespace DynamoAssistant
         {
             ViewModel.IsVoicePreferred = VoiceResultsCheckBox.IsChecked ?? false;
         }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.StopAudio();
+        }
     }
 }

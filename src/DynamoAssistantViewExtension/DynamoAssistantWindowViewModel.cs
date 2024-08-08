@@ -4,9 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Windows.Input;
 using Dynamo.Core;
 using Dynamo.Extensions;
@@ -61,6 +59,11 @@ namespace DynamoAssistant
         /// Response from backend service
         /// </summary>
         private string response;
+
+        /// <summary>
+        /// WaveOutEvent instance to play the audio
+        /// </summary>
+        private WaveOutEvent waveOutEvent;
         #endregion
 
         /// <summary>
@@ -216,21 +219,25 @@ namespace DynamoAssistant
         {
             AudioClient client = new(model: "tts-1", apikey);
             BinaryData speech = client.GenerateSpeechFromText(input, GeneratedSpeechVoice.Echo);
-            var fileName = $"{Guid.NewGuid()}.mp3";
-            using FileStream stream = File.OpenWrite(fileName);
-            speech.ToStream().CopyTo(stream);
-            stream.Close();
 
-            using (var audioFile = new AudioFileReader(fileName))
-            using (var outputDevice = new WaveOutEvent())
+            using var mp3Reader = new Mp3FileReader(speech.ToStream());
+            waveOutEvent = new WaveOutEvent();
+            waveOutEvent.Init(mp3Reader);
+            waveOutEvent.Play();
+
+            // Wait for playback to complete before exiting
+            while (waveOutEvent.PlaybackState == PlaybackState.Playing)
             {
-                outputDevice.Init(audioFile);
-                outputDevice.Play();
-                while (outputDevice.PlaybackState == PlaybackState.Playing)
-                {
-                    Thread.Sleep(1000);
-                }
+                System.Threading.Thread.Sleep(100); // Simple way to wait
             }
+        }
+
+        /// <summary>
+        /// Function to stop the audio playback
+        /// </summary>
+        internal void StopAudio()
+        {
+            waveOutEvent?.Stop();
         }
 
         internal async void DescribeGraph()
@@ -373,7 +380,7 @@ namespace DynamoAssistant
         /// </summary>
         public void Dispose()
         {
-            // Do nothing
+            waveOutEvent?.Dispose();
         }
     }
 }
