@@ -3,8 +3,10 @@ using System.ClientModel;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using System.Windows.Input;
 using Dynamo.Core;
 using Dynamo.Extensions;
@@ -12,11 +14,10 @@ using Dynamo.Models;
 using Dynamo.UI.Commands;
 using Dynamo.ViewModels;
 using NAudio.Wave;
-using OpenAI.Assistants;
 using OpenAI;
+using OpenAI.Assistants;
 using OpenAI.Audio;
 using OpenAI.Chat;
-using System.Text.RegularExpressions;
 
 namespace DynamoAssistant
 {
@@ -28,7 +29,17 @@ namespace DynamoAssistant
         // Chat GPT related fields
         private readonly ChatClient chatGPTClient;
 
-        // The name of the assistant
+        // Chat GPT Assistant related fields
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        private readonly AssistantClient assistantClient;
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+        private readonly Assistant assistant;
+
+        private readonly List<MessageContent> userMessages = new List<MessageContent>();
+        private readonly List<MessageContent> assistantMessages = new List<MessageContent>();
+
+        // The name of the assistant to put into messages list
         private readonly string AssistantName = "Gen-AI assistant:\n";
 
         //private readonly Conversation conversation;
@@ -100,8 +111,11 @@ namespace DynamoAssistant
             // Create a ChatGPTClient instance with the API key
             chatGPTClient = new(model: "gpt-4o", apikey);
 
-            // Adjust this value for more or less "creativity" in the response
-            // conversation.RequestParameters.Temperature = 0.1;
+            // Create a ChatGPTAssistantClient instance with the API key
+            assistantClient = new(apikey);
+
+            assistant = assistantClient.GetAssistant("asst_J8PSA1asQDqEGluCGMykzJhJ").Value;
+            //Console.WriteLine(assistant.Name + assistant.Description + assistant.Temperature);
 
             // Display a welcome message
             Messages.Add(AssistantName + "Welcome to Dynamo world and ask me anything to get started!\n");
@@ -150,34 +164,28 @@ namespace DynamoAssistant
 
         internal async Task SendMessageToAssistant(string msg)
         {
-            // Display the chatbot's response
-#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            AssistantClient client = new(apikey);
-#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-
-            var assistant = client.GetAssistant("asst_J8PSA1asQDqEGluCGMykzJhJ").Value;
-            //Console.WriteLine(assistant.Name + assistant.Description + assistant.Temperature);
-
-            // Create a thread with an initial user message and run it.
+            userMessages.Add(msg);
+            // Create a thread with an initial user message and run it. 
             ThreadCreationOptions threadOptions = new()
             {
-                InitialMessages = { msg }
+                InitialMessages = { new ThreadInitializationMessage(MessageRole.User, userMessages), 
+                    /*new ThreadInitializationMessage(MessageRole.Assistant, assistantMessages)*/ }
             };
 
-            ThreadRun run = client.CreateThreadAndRun(assistant.Id, threadOptions);
+            ThreadRun run = assistantClient.CreateThreadAndRun(assistant.Id, threadOptions);
 
             // Poll the run until it is no longer queued or in progress.
             while (!run.Status.IsTerminal)
             {
                 await Task.Delay(TimeSpan.FromSeconds(1));
-                run = await client.GetRunAsync(run.ThreadId, run.Id);
+                run = await assistantClient.GetRunAsync(run.ThreadId, run.Id);
             }
 
             // With the run complete, list the messages and display their content
             if (run.Status == RunStatus.Completed)
             {
                 PageCollection<ThreadMessage> messagePages
-                    = client.GetMessages(run.ThreadId, new MessageCollectionOptions() { Order = ListOrder.OldestFirst });
+                    = assistantClient.GetMessages(run.ThreadId, new MessageCollectionOptions() { Order = ListOrder.OldestFirst });
                 IEnumerable<ThreadMessage> messages = messagePages.GetAllValues();
 
                 foreach (ThreadMessage message in messages)
@@ -189,6 +197,7 @@ namespace DynamoAssistant
                             // Set response and clean up resources references
                             Regex regex = new Regex("【.*?†source】");
                             response = regex.Replace(contentItem.Text, "");
+                            assistantMessages.Add(response);
                         }
                     }
                 }
