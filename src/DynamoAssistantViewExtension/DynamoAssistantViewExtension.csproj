@@ -21,6 +21,9 @@
     <None Update="DynamoAssistantViewExtension_ViewExtensionDefinition.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+      <None Update="pkg.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestDyn\TestGraph.dyn">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -39,9 +42,11 @@
       <PackageDll Include="$(ProjectDir)bin\$(ConfigurationName)\DynamoAssistantViewExtension.dll" />
       <PackageXml Include="$(ProjectDir)bin\$(ConfigurationName)\DynamoAssistantViewExtension_ViewExtensionDefinition.xml" />
       <PackageDyn Include="$(ProjectDir)bin\$(ConfigurationName)\**\*.dyn" />
+      <PackageJson Include="$(ProjectDir)bin\$(ConfigurationName)\pkg.json" />
     </ItemGroup>
     <Copy SourceFiles="@(PackageDll)" DestinationFolder="$(ProjectDir)..\..\dynamo_viewExtension\Dynamo Gen AI assistant\bin" />
     <Copy SourceFiles="@(PackageXml)" DestinationFolder="$(ProjectDir)..\..\dynamo_viewExtension\Dynamo Gen AI assistant\extra" />
     <Copy SourceFiles="@(PackageDyn)" DestinationFolder="$(ProjectDir)..\..\dynamo_viewExtension\Dynamo Gen AI assistant\dyn" />
+    <Copy SourceFiles="@(PackageJson)" DestinationFolder="$(ProjectDir)..\..\dynamo_viewExtension\Dynamo Gen AI assistant" />
   </Target>
 </Project>
